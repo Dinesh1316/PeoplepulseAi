@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  HR_MANAGER
+  EMPLOYEE
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role
+  employee     Employee?
+  createdAt    DateTime @default(now())
+}
+
+model Employee {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  name            String
+  avatar          String?
+  department      String
+  designation     String
+  managerId       String?
+  phone           String?
+  location        String?
+  joiningDate     DateTime
+  leaveBalance    Int      @default(18)
+  documents       Json
+  profileSettings Json
+  attendance      Attendance[]
+  leaves          LeaveRequest[]
+  payroll         PayrollRecord[]
+  timesheets      Timesheet[]
+}
+
+model Attendance {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  date       DateTime
+  clockIn    String?
+  clockOut   String?
+  status     String
+  mode       String
+  late       Boolean  @default(false)
+}
+
+model LeaveRequest {
+  id         String      @id @default(cuid())
+  employeeId String
+  employee   Employee    @relation(fields: [employeeId], references: [id])
+  type       String
+  from       DateTime
+  to         DateTime
+  days       Int
+  reason     String
+  status     LeaveStatus @default(PENDING)
+  approver   String?
+  createdAt  DateTime    @default(now())
+}
+
+model PayrollRecord {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  month       String
+  base        Int
+  bonus       Int
+  deductions  Int
+  net         Int
+  status      String
+  processedAt DateTime?
+}
+
+model Timesheet {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  date       DateTime
+  project    String
+  hours      Float
+  summary    String
+}
